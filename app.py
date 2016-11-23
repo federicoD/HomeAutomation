@@ -66,7 +66,7 @@ def projector_input(input):
         abort(400)
 
 def avr_send_ir_code(code):
-    call(["irsend", "SEND_ONCE", "RAV_YAMAHA-RAV294", code])
+    call(["irsend", "SEND_ONCE", "YAMAHA-RAV294", code])
 
 def projector_send_ir_code(code):
     call(["irsend", "SEND_ONCE", "BENQ_W1070", code])
