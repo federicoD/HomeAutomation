@@ -1,5 +1,6 @@
 from flask import Flask
 from flask import request
+from flask import abort
 from subprocess import call
 import time
 
@@ -14,15 +15,15 @@ def avr_on():
 
 @app.route('/avr/input/<input>', methods=['POST'])
 def avr_input(input):
-    if (input != "hdmi1" or
-        input != "hdmi2" or
-        input != "hdmi3" or
-        input != "hdmi4" or
-        input != "audio1" or
+    if (input != "hdmi1" and
+        input != "hdmi2" and
+        input != "hdmi3" and
+        input != "hdmi4" and
+        input != "audio1" and
         input != "audio2"):
             abort(400)
     
-    formatted_input = input.uppercase()
+    formatted_input = input.upper()
     avr_send_ir_code("INPUT" + formatted_input)
     return ''
 
