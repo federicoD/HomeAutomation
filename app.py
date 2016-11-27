@@ -1,7 +1,9 @@
 from flask import Flask
-from flask import request
+from flask import request, Response
 from flask import abort
 from flask import jsonify
+from functools import wraps
+import settings
 import subprocess
 import time
 
@@ -10,11 +12,13 @@ app = Flask(__name__)
 # AVR - YAMAHA HTR-4063
 
 @app.route('/avr/power', methods=['POST'])
+@requires_auth
 def avr_on():
     avr_send_ir_code("KEY_POWER")
     return ''
 
 @app.route('/avr/input/<input>', methods=['POST'])
+@requires_auth
 def avr_input(input):
     if (input != "hdmi1" and
         input != "hdmi2" and
@@ -29,16 +33,19 @@ def avr_input(input):
     return ''
 
 @app.route('/avr/volume/up', methods=['POST'])
+@requires_auth
 def avr_volume_up():
     avr_send_ir_code("KEY_VOLUMEUP")
     return ''
 
 @app.route('/avr/volume/down', methods=['POST'])
+@requires_auth
 def avr_volume_down():
     avr_send_ir_code("KEY_VOLUMEDOWN")
     return ''
 
 @app.route('/avr/volume/mute', methods=['POST'])
+@requires_auth
 def avr_volume_mute():
     avr_send_ir_code("VOL_MUTE")
     return ''
@@ -47,11 +54,13 @@ def avr_volume_mute():
 # PROJECTOR - BENQ W1070
 
 @app.route('/projector/on', methods=['POST'])
+@requires_auth
 def projector_on():
     projector_send_ir_code("KEY_POWER")
     return ''
 
 @app.route('/projector/off', methods=['POST'])
+@requires_auth
 def projector_off():
     projector_send_ir_code("KEY_SUSPEND")
     time.sleep(0.5)
@@ -59,6 +68,7 @@ def projector_off():
     return ''
 
 @app.route('/projector/input/<input>', methods=['POST'])
+@requires_auth
 def projector_input(input):
     if (input == "hdmi1"):
         projector_send_ir_code("HDMI-1")
@@ -97,6 +107,25 @@ def projector_send_ir_code(code):
 #     response = jsonify({'message': error})
 #     return response
 
+def check_auth(username, password):
+    return username == settings.AUTH_USERNAME and password == settings.AUTH_PASSWORD
+
+def authenticate():
+    """Sends a 401 response that enables basic auth"""
+    return Response(
+    'Could not verify your access level for that URL.\n'
+    'You have to login with proper credentials', 401,
+    {'WWW-Authenticate': 'Basic realm="Login Required"'})
+
+def requires_auth(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        auth = request.authorization
+        if not auth or not check_auth(auth.username, auth.password):
+            return authenticate()
+        return f(*args, **kwargs)
+    return decorated
+
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', debug=True)
+    app.run(host='0.0.0.0', port=settings.PORT, debug=settings.DEBUG)
